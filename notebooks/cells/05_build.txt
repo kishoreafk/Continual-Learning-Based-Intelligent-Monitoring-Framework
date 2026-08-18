@@ -9,36 +9,56 @@ assert common_channels, "no channel is present in both train and test splits"
 CHAN = "T-1" if "T-1" in common_channels else common_channels[0]
 print("using channel", CHAN, "of", len(common_channels), "common channels")
 
-tr = np.asarray(train[CHAN], dtype=np.float32)
-te = np.asarray(test[CHAN], dtype=np.float32)
-if tr.ndim == 1:
-    tr = tr[:, None]
-if te.ndim == 1:
-    te = te[:, None]
-if tr.ndim != 2 or te.ndim != 2 or tr.shape[1] != te.shape[1]:
-    raise ValueError(f"incompatible channel shapes: train={tr.shape}, test={te.shape}")
+tr_full = np.asarray(train[CHAN], dtype=np.float32)
+te_full = np.asarray(test[CHAN], dtype=np.float32)
+if tr_full.ndim == 1:
+    tr_full = tr_full[:, None]
+if te_full.ndim == 1:
+    te_full = te_full[:, None]
+if (tr_full.ndim != 2 or te_full.ndim != 2
+        or tr_full.shape[1] != te_full.shape[1]):
+    raise ValueError(
+        f"incompatible channel shapes: train={tr_full.shape}, test={te_full.shape}"
+    )
+
+# SMAP/MSL telemanom-format channels bundle ONE continuous telemetry signal
+# with roughly two dozen one-hot command/indicator columns (almost always 0,
+# rarely 1). SAGE-Monitor's residual z-score gate assumes continuous sensor
+# noise with a roughly stable variance; feeding it a rare-event indicator
+# breaks that assumption two ways:
+#   - during calibration the indicator sits at 0, so its residual scale is
+#     calibrated near zero;
+#   - when it legitimately fires during NORMAL operation, that single flip
+#     produces an astronomical z-score unrelated to any system fault.
+# Keep only channels with meaningful continuous variance in the training
+# telemetry; a channel this framework's z-score fault/novel discrimination
+# was never designed to score should not be fed into it.
+CONTINUOUS_SD_MIN = 1e-2
+raw_sd = tr_full.std(axis=0, keepdims=True)
+continuous_mask = (raw_sd >= CONTINUOUS_SD_MIN)[0]
+n_dropped = int((~continuous_mask).sum())
+if n_dropped:
+    print(f"train: dropping {n_dropped} near-constant/indicator "
+          f"channel(s) (sd < {CONTINUOUS_SD_MIN}), keeping "
+          f"{int(continuous_mask.sum())} continuous channel(s)")
+if not continuous_mask.any():
+    # Degenerate fallback: keep the single most-variable channel rather
+    # than fail outright.
+    continuous_mask[np.argmax(raw_sd[0])] = True
+    print("train: no channel cleared the continuity floor; "
+          "keeping the single most-variable channel")
+
+tr = tr_full[:, continuous_mask]
+te = te_full[:, continuous_mask]
 
 # Fit normalization on training telemetry only; never use test statistics.
 mu = tr.mean(axis=0, keepdims=True)
-raw_sd = tr.std(axis=0, keepdims=True)
+sd = tr.std(axis=0, keepdims=True) + 1e-6
 
-# Real telemetry (unlike the synthetic gate stream) includes near-constant
-# command/indicator channels. A bare "+ 1e-6" floor lets those channels' sd
-# collapse toward zero, so any tiny test-time deviation divides by ~1e-6 and
-# explodes into millions-scale z-scores that swamp channel_zscores/max_z and
-# corrupt the fault/novel gate bands. Use a floor large enough to keep
-# standardized values in a sane numeric range, and report how many channels
-# it affected.
-SD_FLOOR = 1e-2
-n_near_constant = int((raw_sd < SD_FLOOR).sum())
-if n_near_constant:
-    print(f"train: {n_near_constant} near-constant channel(s) floored to sd={SD_FLOOR}")
-sd = np.maximum(raw_sd, SD_FLOOR)
-
-# Defense in depth: even with the floor, clip to a wide but bounded z-range.
-# +-12 sigma is far beyond any real anomaly signal, so genuine faults still
-# saturate the gate while a single corrupted channel can no longer produce
-# an astronomical max_zscore that swamps calibration or the error band.
+# Defense in depth: even after dropping indicator channels, clip to a wide
+# but bounded z-range. +-12 sigma is far beyond any real anomaly signal, so
+# genuine faults still saturate the gate while a stray outlier can no longer
+# produce an astronomical max_zscore that swamps the fault/novel gate bands.
 Z_CLIP = 12.0
 
 
