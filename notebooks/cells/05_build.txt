@@ -20,22 +20,42 @@ if tr.ndim != 2 or te.ndim != 2 or tr.shape[1] != te.shape[1]:
 
 # Fit normalization on training telemetry only; never use test statistics.
 mu = tr.mean(axis=0, keepdims=True)
-sd = tr.std(axis=0, keepdims=True) + 1e-6
+raw_sd = tr.std(axis=0, keepdims=True)
+
+# Real telemetry (unlike the synthetic gate stream) includes near-constant
+# command/indicator channels. A bare "+ 1e-6" floor lets those channels' sd
+# collapse toward zero, so any tiny test-time deviation divides by ~1e-6 and
+# explodes into millions-scale z-scores that swamp channel_zscores/max_z and
+# corrupt the fault/novel gate bands. Use a floor large enough to keep
+# standardized values in a sane numeric range, and report how many channels
+# it affected.
+SD_FLOOR = 1e-2
+n_near_constant = int((raw_sd < SD_FLOOR).sum())
+if n_near_constant:
+    print(f"train: {n_near_constant} near-constant channel(s) floored to sd={SD_FLOOR}")
+sd = np.maximum(raw_sd, SD_FLOOR)
+
+# Defense in depth: even with the floor, clip to a wide but bounded z-range.
+# +-12 sigma is far beyond any real anomaly signal, so genuine faults still
+# saturate the gate while a single corrupted channel can no longer produce
+# an astronomical max_zscore that swamps calibration or the error band.
+Z_CLIP = 12.0
 
 
-def standardize_finite(values, name):
+def standardize_bounded(values, name):
     scaled = (values - mu) / sd
     invalid = ~np.isfinite(scaled)
     count = int(invalid.sum())
     print(f"{name}: non-finite values repaired: {count}")
-    # Explicit values are essential: np.nan_to_num's default +/-inf handling
-    # produces the largest representable float and can create billion-scale
-    # residual z-scores and false fault alerts.
-    return np.nan_to_num(scaled, nan=0.0, posinf=0.0, neginf=0.0)
+    scaled = np.nan_to_num(scaled, nan=0.0, posinf=Z_CLIP, neginf=-Z_CLIP)
+    clipped = int((np.abs(scaled) > Z_CLIP).sum())
+    if clipped:
+        print(f"{name}: {clipped} value(s) clipped to +-{Z_CLIP}")
+    return np.clip(scaled, -Z_CLIP, Z_CLIP)
 
 
-train_series = standardize_finite(tr, "train")
-test_series = standardize_finite(te, "test")
+train_series = standardize_bounded(tr, "train")
+test_series = standardize_bounded(te, "test")
 
 test_labels = np.zeros(len(test_series), dtype=np.int64)
 for start, end in anoms.get(CHAN, []):
