@@ -3,12 +3,10 @@
 Run:  python scripts/build_notebook.py
 """
 
-import base64
 import json
 from pathlib import Path
 
 ROOT = Path("E:/Continual Monitoring Framework")
-PKG = ROOT / "sage_monitor"
 CELLS = ROOT / "notebooks" / "cells"
 OUT = ROOT / "notebooks" / "SAGE_Monitor_Colab_Training.ipynb"
 
@@ -30,17 +28,10 @@ ORDER = [
 
 
 def main():
-    # embed the package source keyed by basename
-    files = {}
-    for p in sorted(PKG.glob("*.py")):
-        files[p.name] = base64.b64encode(p.read_bytes()).decode("ascii")
-    pkg_json = json.dumps(files)
-
+    # The setup cell clones the public GitHub repository at runtime.
     cells = []
     for name in ORDER:
         text = (CELLS / name).read_text(encoding="utf-8")
-        if name == "03c_setup_pkg.txt":
-            text = text.replace("__PKG_FILES__", pkg_json)
         kind = "markdown" if name.endswith(".md") else "code"
         cell = {
             "cell_type": kind,

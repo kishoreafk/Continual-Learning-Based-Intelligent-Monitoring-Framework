@@ -39,7 +39,7 @@ Continual Monitoring Framework/
 │   └── build_notebook.py  # assembles the Colab notebook from cells + package
 ├── notebooks/
 │   ├── cells/             # individual Colab cells (markdown + code)
-│   └── SAGE_Monitor_Colab_Training.ipynb   # self-contained cloud training
+│   └── SAGE_Monitor_Colab_Training.ipynb   # GitHub-backed cloud training
 ├── artifacts/             # run reports and saved models (generated)
 ├── data/                  # downloaded datasets (git-ignored by convention)
 └── requirements.txt
@@ -103,9 +103,11 @@ through the safety gate, and writes `artifacts/run_report.json`.
 
 ## Train in the cloud (Google Colab)
 
-Open `notebooks/SAGE_Monitor_Colab_Training.ipynb`. The notebook is fully
-self-contained: it embeds the whole `sage_monitor` package, downloads the NASA
-SMAP/MSL telemetry dataset from Kaggle
+Open `notebooks/SAGE_Monitor_Colab_Training.ipynb`. The notebook clones the
+public `sage_monitor` package from
+`https://github.com/kishoreafk/Continual-Learning-Based-Intelligent-Monitoring-Framework`
+(branch `main`) at runtime and prints the checked-out commit. It then downloads
+the NASA SMAP/MSL telemetry dataset from Kaggle
 (`patrickfleith/nasa-anomaly-detection-dataset-smap-msl`), builds the labelled
 windows, constructs the continual-learning stream, trains and streams, then
 reports detection, temporal, continual-learning and safety metrics and plots

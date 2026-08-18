@@ -1,17 +1,35 @@
-# 3) Unpack the embedded sage_monitor package
-import base64, os, sys
+# 3) Clone the framework package from GitHub
+import importlib
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 
-FILES = __PKG_FILES__   # injected by the builder: basename -> base64 source
+REPO_URL = "https://github.com/kishoreafk/Continual-Learning-Based-Intelligent-Monitoring-Framework.git"
+REPO_BRANCH = "main"
+REPO_DIR = Path("sage_monitor_repo")
 
-PKGDIR = Path("sage_pkg") / "sage_monitor"
-PKGDIR.mkdir(parents=True, exist_ok=True)
-for name, blob in FILES.items():
-    # embedded names must be plain .py basenames; refuse anything else
-    if Path(name).name != name or not name.endswith(".py"):
-        raise ValueError(f"unexpected embedded file name: {name!r}")
-    (PKGDIR / name).write_bytes(base64.b64decode(blob))
-sys.path.insert(0, os.path.abspath("sage_pkg"))
+# Make the setup cell safe to rerun in the same Colab session.
+if REPO_DIR.exists():
+    shutil.rmtree(REPO_DIR)
+subprocess.run(
+    ["git", "clone", "--depth", "1", "--branch", REPO_BRANCH,
+     REPO_URL, str(REPO_DIR)],
+    check=True,
+)
+
+# Remove an earlier import if the cell was rerun after another package setup.
+for name in list(sys.modules):
+    if name == "sage_monitor" or name.startswith("sage_monitor."):
+        del sys.modules[name]
+importlib.invalidate_caches()
+sys.path.insert(0, str(REPO_DIR.resolve()))
 
 import sage_monitor
+revision = subprocess.check_output(
+    ["git", "-C", str(REPO_DIR), "rev-parse", "--short", "HEAD"],
+    text=True,
+).strip()
 print("sage_monitor version", sage_monitor.__version__)
+print("source:", REPO_URL)
+print("branch:", REPO_BRANCH, "commit:", revision)
