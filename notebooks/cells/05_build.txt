@@ -27,8 +27,7 @@ def standardize_finite(values, name):
     scaled = (values - mu) / sd
     invalid = ~np.isfinite(scaled)
     count = int(invalid.sum())
-    if count:
-        print(f"{name}: replacing {count} non-finite values with normalized mean")
+    print(f"{name}: non-finite values repaired: {count}")
     # Explicit values are essential: np.nan_to_num's default +/-inf handling
     # produces the largest representable float and can create billion-scale
     # residual z-scores and false fault alerts.

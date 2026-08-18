@@ -30,5 +30,11 @@ assert train_X is not None and len(train_X) > 0
 
 ctrl = SAGEController(cfg)
 ctrl.train_base(train_X, verbose=True)
+if ctrl.anomaly_head._ch_sd is not None:
+    ch_sd = ctrl.anomaly_head._ch_sd.detach().float().cpu()
+    print("calibrated residual scale:",
+          f"min={ch_sd.min().item():.6g}",
+          f"median={ch_sd.median().item():.6g}",
+          f"max={ch_sd.max().item():.6g}")
 records = ctrl.run_stream(Xs, labels=Ys, log_every=150)
 print("streaming complete:", len(records), "steps")
