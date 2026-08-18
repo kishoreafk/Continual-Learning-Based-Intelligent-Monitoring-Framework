@@ -1,25 +1,39 @@
-# 5) Build a labelled series for one channel, then window it
-import numpy as np, torch
+# 5) Build clean training windows and labelled Kaggle test windows
+import numpy as np
+import torch
 
-CHAN = "T-1" if "T-1" in test else list(test.keys())[0]
-print("using channel", CHAN)
+from sage_monitor.datasets import make_windows
+
+common_channels = sorted(set(train).intersection(test))
+assert common_channels, "no channel is present in both train and test splits"
+CHAN = "T-1" if "T-1" in common_channels else common_channels[0]
+print("using channel", CHAN, "of", len(common_channels), "common channels")
 
 tr = np.asarray(train[CHAN], dtype=np.float32)
 te = np.asarray(test[CHAN], dtype=np.float32)
-series = np.concatenate([tr, te], axis=0)
-if series.ndim == 1:
-    series = np.stack([series, np.roll(series, 5), np.roll(series, -5)], axis=1)
+if tr.ndim == 1:
+    tr = tr[:, None]
+if te.ndim == 1:
+    te = te[:, None]
+if tr.ndim != 2 or te.ndim != 2 or tr.shape[1] != te.shape[1]:
+    raise ValueError(f"incompatible channel shapes: train={tr.shape}, test={te.shape}")
 
-labels = np.zeros(series.shape[0], dtype=np.int64)
-offset = len(tr)  # anomaly labels index the test portion
-for (s, e) in anoms.get(CHAN, []):
-    lo, hi = offset + int(s), offset + int(e)
-    labels[max(lo, 0): min(hi, len(labels))] = 1
+# Fit normalization on training telemetry only; never use test statistics.
+mu = tr.mean(axis=0, keepdims=True)
+sd = tr.std(axis=0, keepdims=True) + 1e-6
+train_series = np.nan_to_num((tr - mu) / sd)
+test_series = np.nan_to_num((te - mu) / sd)
 
-mu, sd = series[:len(tr)].mean(0, keepdims=True), series[:len(tr)].std(0, keepdims=True) + 1e-6
-series = (series - mu) / sd
+test_labels = np.zeros(len(test_series), dtype=np.int64)
+for start, end in anoms.get(CHAN, []):
+    lo, hi = max(0, int(start)), min(int(end), len(test_labels))
+    test_labels[lo:hi] = 1
 
 WINDOW, STRIDE = 60, 4
-from sage_monitor.datasets import make_windows
-X, Y = make_windows(series, labels, window=WINDOW, stride=STRIDE)
-print("windows:", X.shape, "fault windows:", int(Y.sum()))
+X_train, _ = make_windows(train_series, None, window=WINDOW, stride=STRIDE)
+X_test, Y_test = make_windows(
+    test_series, test_labels, window=WINDOW, stride=STRIDE
+)
+assert Y_test is not None and len(X_test) == len(Y_test)
+print("train windows:", X_train.shape)
+print("test windows :", X_test.shape, "anomaly windows:", int(Y_test.sum()))

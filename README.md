@@ -108,10 +108,12 @@ public `sage_monitor` package from
 `https://github.com/kishoreafk/Continual-Learning-Based-Intelligent-Monitoring-Framework`
 (branch `main`) at runtime and prints the checked-out commit. It then downloads
 the NASA SMAP/MSL telemetry dataset from Kaggle
-(`patrickfleith/nasa-anomaly-detection-dataset-smap-msl`), builds the labelled
-windows, constructs the continual-learning stream, trains and streams, then
-reports detection, temporal, continual-learning and safety metrics and plots
-the decision stream.
+(`patrickfleith/nasa-anomaly-detection-dataset-smap-msl`), recursively loads
+both bundled and per-channel split layouts, builds clean training and labelled
+test windows, and streams the Kaggle test data by default. Set
+`STREAM_MODE = "synthetic_gate"` in the stream cell for the controlled
+B/FAULT/OOD gate regression. The notebook then reports detection, temporal,
+continual-learning and safety metrics and plots the decision stream.
 
 Kaggle credentials: add `KAGGLE_USERNAME` / `KAGGLE_KEY` under
 *Colab → Secrets* (or upload `kaggle.json` when prompted).

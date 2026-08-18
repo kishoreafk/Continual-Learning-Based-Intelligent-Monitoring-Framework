@@ -1,54 +1,93 @@
-# 4) Load SMAP/MSL telemetry + anomaly labels (robust to file layout)
-import numpy as np, os, glob, json
+# 4) Load SMAP/MSL telemetry + anomaly labels (robust to Kaggle layouts)
+import json
+from pathlib import Path
 
-def load_npy_dict(path):
-    # The SMAP/MSL train.npy/test.npy bundles in this Kaggle dataset are the
-    # original telemanom-format pickled dicts keyed by channel id. We pin the
-    # Kaggle dataset, so this is trusted data.
-    opts = {}
-    opts["allow_pickle"] = True
-    try:
-        arr = np.load(path, **opts)
-    except ValueError:
-        arr = np.load(path)
+import numpy as np
+
+DATA_ROOT = Path("data/smap_msl")
+
+
+def _load_npy(path):
+    """Load either a channel array or a dict bundle from one .npy file."""
+    arr = np.load(path, allow_pickle=True)
     if arr.ndim == 0:
         item = arr.item()
         if isinstance(item, dict):
             return item
-    if isinstance(arr, dict):
-        return arr
-    return None
+    return np.asarray(arr, dtype=np.float32)
 
-def find(names):
-    for nm in names:
-        hits = sorted(glob.glob("data/smap_msl/" + nm))
-        hits += sorted(glob.glob("data/smap_msl/*/" + nm))
-        if hits:
-            return hits[0]
-    return None
 
-train_path = find(["train.npy"])
-test_path = find(["test.npy"])
-label_path = find(["labeled_anomalies.csv", "labeled_anomalies.json"])
-print("train:", train_path)
-print("test :", test_path)
+def _as_channel_dict(item):
+    if not isinstance(item, dict):
+        return None
+    return {str(k): np.asarray(v, dtype=np.float32) for k, v in item.items()}
+
+
+def load_split(split):
+    """Load a split from a bundle or nested per-channel .npy files.
+
+    Kaggle copies of SMAP/MSL appear in both formats:
+      data/.../train.npy
+      data/.../train/<channel>.npy
+    The search is recursive so extraction depth does not matter.
+    """
+    split = split.lower()
+    split_dirs = sorted(
+        p for p in DATA_ROOT.rglob("*")
+        if p.is_dir() and p.name.lower() == split
+    )
+    for split_dir in split_dirs:
+        channel_files = sorted(split_dir.rglob("*.npy"))
+        loaded = {}
+        for path in channel_files:
+            item = _load_npy(path)
+            bundle = _as_channel_dict(item)
+            if bundle is not None:
+                loaded.update(bundle)
+            else:
+                loaded[path.stem] = item
+        if loaded:
+            print(f"{split}: loaded {len(loaded)} channel files from {split_dir}")
+            return loaded
+
+    bundle_paths = sorted(
+        p for p in DATA_ROOT.rglob("*.npy") if p.stem.lower() == split
+    )
+    for path in bundle_paths:
+        bundle = _as_channel_dict(_load_npy(path))
+        if bundle:
+            print(f"{split}: loaded {len(bundle)} channels from {path}")
+            return bundle
+
+    raise FileNotFoundError(
+        f"Could not find a {split} directory or {split}.npy below {DATA_ROOT}"
+    )
+
+
+train = load_split("train")
+test = load_split("test")
+
+label_candidates = sorted(
+    p for p in DATA_ROOT.rglob("*")
+    if p.is_file() and p.name.lower() in {"labeled_anomalies.csv", "labeled_anomalies.json"}
+)
+label_path = label_candidates[0] if label_candidates else None
 print("labels:", label_path)
-
-train = load_npy_dict(train_path)
-test = load_npy_dict(test_path)
-assert train is not None, "could not parse train.npy"
-print("channels:", len(train), "e.g.", list(train.keys())[:6])
+print("train channels:", len(train), "e.g.", list(train.keys())[:6])
+print("test channels :", len(test), "e.g.", list(test.keys())[:6])
+assert label_path is not None, "could not find labeled_anomalies.csv/json"
 
 anoms = {}
-if label_path and label_path.endswith(".json"):
-    with open(label_path) as f:
-        rows = json.load(f)
+if label_path.suffix.lower() == ".json":
+    rows = json.loads(label_path.read_text())
 else:
     import pandas as pd
     rows = pd.read_csv(label_path).to_dict("records")
-for r in rows:
-    cid = r.get("chan_id") or r.get("channel")
-    seqs = r.get("anomaly_sequences") or r.get("anomalies")
+for row in rows:
+    cid = row.get("chan_id") or row.get("channel")
+    if cid is None:
+        continue
+    seqs = row.get("anomaly_sequences") or row.get("anomalies") or []
     if isinstance(seqs, str):
         seqs = json.loads(seqs.replace("'", '"'))
     anoms[cid] = seqs

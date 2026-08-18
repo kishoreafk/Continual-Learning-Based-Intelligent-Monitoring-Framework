@@ -30,6 +30,13 @@ revision = subprocess.check_output(
     ["git", "-C", str(REPO_DIR), "rev-parse", "--short", "HEAD"],
     text=True,
 ).strip()
+expected_package = (REPO_DIR / "sage_monitor" / "__init__.py").resolve()
+actual_package = Path(sage_monitor.__file__).resolve()
+if actual_package != expected_package:
+    raise RuntimeError(
+        f"Imported sage_monitor from {actual_package}, expected {expected_package}"
+    )
 print("sage_monitor version", sage_monitor.__version__)
 print("source:", REPO_URL)
 print("branch:", REPO_BRANCH, "commit:", revision)
+print("package path:", actual_package.parent)

@@ -23,6 +23,19 @@ print("  UNSAFE ADAPTATION RATE:", round(report["unsafe_adaptation_rate"], 3))
 print("  residual-shape telemetry:",
       "max_zscore present" if records and "max_zscore" in records[0]
       else "max_zscore missing")
+print("== segment action / residual-shape checks ==")
+from collections import Counter
+for s in meta.segments:
+    seg_records = records[s["win_start"]:s["win_end"]]
+    actions = Counter(r["action"] for r in seg_records)
+    max_z = [r["max_zscore"] for r in seg_records]
+    exceed = [r["exceed_count"] for r in seg_records]
+    if max_z:
+        shape = (f"max_z=[{min(max_z):.1f}, {max(max_z):.1f}], "
+                 f"exceed=[{min(exceed)}, {max(exceed)}]")
+    else:
+        shape = "no records"
+    print(f"  {s['name']}: {dict(actions)}; {shape}")
 print("== segment anomaly scores ==")
 for n, v in report["segment_anomaly_score"].items():
     print(f"  {n}: {v:.3f}")
