@@ -1,0 +1,32 @@
+# 8) Full metric report incl. safety metrics
+from sage_monitor import metrics as M
+import json
+
+report = M.summarise(ctrl, records, meta.segments, Ys.numpy())
+
+print("== detection ==")
+for k in ("precision", "recall", "f1"):
+    print(f"  {k}: {report['detection'][k]:.3f}")
+print("== point-adjust ==")
+for k in ("precision", "recall", "f1"):
+    print(f"  {k}: {report['detection_point_adjust'][k]:.3f}")
+print("  missed:", report["missed"], " delays:", report["delays"])
+print("  false alarm rate:", round(report["false_alarm_rate"], 4))
+print("== continual / safety ==")
+print("  regimes:", report["n_regimes"])
+print("  adaptations:", report["stats"]["adaptations"],
+      "unsafe:", report["stats"]["unsafe_adaptations"])
+print("  recalls:", report["stats"]["recalls"],
+      "rejects:", report["stats"]["rejects"],
+      "alerts:", report["stats"]["alerts"])
+print("  UNSAFE ADAPTATION RATE:", round(report["unsafe_adaptation_rate"], 3))
+print("  residual-shape telemetry:",
+      "max_zscore present" if records and "max_zscore" in records[0]
+      else "max_zscore missing")
+print("== segment anomaly scores ==")
+for n, v in report["segment_anomaly_score"].items():
+    print(f"  {n}: {v:.3f}")
+
+with open("run_report.json", "w") as f:
+    json.dump(report, f, indent=2, default=float)
+print("saved run_report.json")

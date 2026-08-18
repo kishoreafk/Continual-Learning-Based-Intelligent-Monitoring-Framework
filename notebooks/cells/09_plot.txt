@@ -1,0 +1,22 @@
+# 9) Visualise the decision stream
+import matplotlib.pyplot as plt
+import numpy as np
+
+t = np.arange(len(records))
+drift = [r["drift"] for r in records]
+anom = [r["anomaly"] for r in records]
+ood = [r["ood"] for r in records]
+act = [1 if r["action"] in ("REJECT", "ALERT") else 0 for r in records]
+
+fig, axs = plt.subplots(4, 1, figsize=(13, 9), sharex=True)
+axs[0].plot(t, drift, lw=1, color="tab:blue"); axs[0].set_ylabel("drift")
+axs[1].plot(t, anom, lw=1, color="tab:red"); axs[1].set_ylabel("anomaly")
+axs[2].plot(t, ood, lw=1, color="tab:purple"); axs[2].set_ylabel("OOD")
+axs[3].fill_between(t, act, step="mid", color="tab:red", alpha=0.6)
+axs[3].set_ylabel("flag")
+for s in meta.segments:
+    for ax in axs:
+        ax.axvspan(s["win_start"], s["win_end"], alpha=0.05)
+    axs[0].text(s["win_start"], 1.0, s["name"], fontsize=7, rotation=90, va="top")
+plt.tight_layout()
+plt.show()

@@ -1,0 +1,8 @@
+# 10) Save the model and download artifacts
+ctrl.save("sage_model.pt")
+try:
+    from google.colab import files
+    files.download("run_report.json")
+    files.download("sage_model.pt")
+except Exception as e:
+    print("artifact download skipped:", e)

@@ -1,0 +1,17 @@
+# 3) Unpack the embedded sage_monitor package
+import base64, os, sys
+from pathlib import Path
+
+FILES = __PKG_FILES__   # injected by the builder: basename -> base64 source
+
+PKGDIR = Path("sage_pkg") / "sage_monitor"
+PKGDIR.mkdir(parents=True, exist_ok=True)
+for name, blob in FILES.items():
+    # embedded names must be plain .py basenames; refuse anything else
+    if Path(name).name != name or not name.endswith(".py"):
+        raise ValueError(f"unexpected embedded file name: {name!r}")
+    (PKGDIR / name).write_bytes(base64.b64decode(blob))
+sys.path.insert(0, os.path.abspath("sage_pkg"))
+
+import sage_monitor
+print("sage_monitor version", sage_monitor.__version__)

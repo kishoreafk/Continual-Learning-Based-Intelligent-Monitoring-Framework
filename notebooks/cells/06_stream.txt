@@ -1,0 +1,11 @@
+# 6) Build the continual-learning stream (scripted drift/fault/recall scenario)
+import torch, numpy as np
+from sage_monitor.streams import build_stream
+from sage_monitor.datasets import synth_multivariate
+
+cfg_ch = X.shape[-1]
+base_series = synth_multivariate(4200, cfg_ch, seed=0)
+Xs, Ys, meta = build_stream(base_series, window=WINDOW, stride=STRIDE, seg_len=600, seed=0)
+print("stream windows:", Xs.shape, "fault windows:", int(Ys.sum()))
+for s in meta.segments:
+    print(f"  [{s['win_start']:4d}..{s['win_end']:4d}] {s['name']} ({s['kind']})")

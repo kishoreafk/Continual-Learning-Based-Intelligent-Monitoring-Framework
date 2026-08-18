@@ -1,0 +1,22 @@
+# 7) Train the base model on the clean first regime, then stream.
+import torch
+from sage_monitor.config import SAGEConfig
+from sage_monitor.controller import SAGEController
+
+torch.manual_seed(42)
+requested_device = "cuda" if torch.cuda.is_available() else "cpu"
+cfg = SAGEConfig(
+    n_channels=Xs.shape[-1], window=WINDOW,
+    train_epochs=6, device=requested_device, gate_min_obs=32,
+)
+print("requested device:", requested_device)
+if torch.cuda.is_available():
+    print("GPU:", torch.cuda.get_device_name(0))
+
+first_end = meta.segments[0]["win_end"]
+train_X = Xs[:first_end][Ys[:first_end] == 0]
+
+ctrl = SAGEController(cfg)
+ctrl.train_base(train_X, verbose=True)
+records = ctrl.run_stream(Xs, labels=Ys, log_every=150)
+print("streaming complete:", len(records), "steps")

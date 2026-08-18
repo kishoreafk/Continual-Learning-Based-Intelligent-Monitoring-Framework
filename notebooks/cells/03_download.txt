@@ -1,0 +1,24 @@
+# Authenticate with Kaggle (Secrets first, manual upload as fallback)
+import os, pathlib
+kaggle_dir = os.path.expanduser("~/.kaggle")
+os.makedirs(kaggle_dir, exist_ok=True)
+
+try:
+    from google.colab import userdata
+    un, key = userdata.get("KAGGLE_USERNAME"), userdata.get("KAGGLE_KEY")
+    creds = '{"username":"%s","key":"%s"}' % (un, key)
+    pathlib.Path(kaggle_dir, "kaggle.json").write_text(creds)
+    print("Kaggle credentials loaded from Colab Secrets.")
+except Exception as e:
+    print("Secrets not available:", e)
+    from google.colab import files
+    print("Upload your kaggle.json now...")
+    up = files.upload()
+    for name in up:
+        if name.endswith("kaggle.json"):
+            pathlib.Path(kaggle_dir, "kaggle.json").write_bytes(up[name])
+
+os.chmod(pathlib.Path(kaggle_dir, "kaggle.json"), 0o600)
+!kaggle datasets download -d patrickfleith/nasa-anomaly-detection-dataset-smap-msl -p data
+!unzip -q -o data/nasa-anomaly-detection-dataset-smap-msl.zip -d data/smap_msl
+print("done")

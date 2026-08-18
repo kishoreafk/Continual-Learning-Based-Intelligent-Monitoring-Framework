@@ -1,0 +1,6 @@
+# 1) Dependencies (Colab supplies PyTorch; keep its CUDA build)
+!pip install -q kaggle numpy pandas scikit-learn matplotlib pyarrow
+import sys, torch
+print("python", sys.version.split()[0])
+print("torch", torch.__version__)
+print("CUDA available:", torch.cuda.is_available())

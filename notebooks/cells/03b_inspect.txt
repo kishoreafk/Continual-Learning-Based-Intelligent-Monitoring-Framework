@@ -1,0 +1,4 @@
+import glob, os
+for p in sorted(glob.glob("data/smap_msl/*", recursive=False)) + sorted(glob.glob("data/smap_msl/*/*")):
+    if os.path.isfile(p) and os.path.getsize(p) > 1024:
+        print(f"{p:60s} {os.path.getsize(p)/1e6:8.2f} MB")

@@ -1,0 +1,43 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Generated project artifacts (run reports, saved models, logs)
+artifacts/
+configs/
+
+# Downloaded datasets (large; fetched at runtime by scripts/notebook)
+data/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+kaggle.json
+
+# IDE / editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store

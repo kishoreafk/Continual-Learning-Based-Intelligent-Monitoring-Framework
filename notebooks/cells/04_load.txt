@@ -1,0 +1,55 @@
+# 4) Load SMAP/MSL telemetry + anomaly labels (robust to file layout)
+import numpy as np, os, glob, json
+
+def load_npy_dict(path):
+    # The SMAP/MSL train.npy/test.npy bundles in this Kaggle dataset are the
+    # original telemanom-format pickled dicts keyed by channel id. We pin the
+    # Kaggle dataset, so this is trusted data.
+    opts = {}
+    opts["allow_pickle"] = True
+    try:
+        arr = np.load(path, **opts)
+    except ValueError:
+        arr = np.load(path)
+    if arr.ndim == 0:
+        item = arr.item()
+        if isinstance(item, dict):
+            return item
+    if isinstance(arr, dict):
+        return arr
+    return None
+
+def find(names):
+    for nm in names:
+        hits = sorted(glob.glob("data/smap_msl/" + nm))
+        hits += sorted(glob.glob("data/smap_msl/*/" + nm))
+        if hits:
+            return hits[0]
+    return None
+
+train_path = find(["train.npy"])
+test_path = find(["test.npy"])
+label_path = find(["labeled_anomalies.csv", "labeled_anomalies.json"])
+print("train:", train_path)
+print("test :", test_path)
+print("labels:", label_path)
+
+train = load_npy_dict(train_path)
+test = load_npy_dict(test_path)
+assert train is not None, "could not parse train.npy"
+print("channels:", len(train), "e.g.", list(train.keys())[:6])
+
+anoms = {}
+if label_path and label_path.endswith(".json"):
+    with open(label_path) as f:
+        rows = json.load(f)
+else:
+    import pandas as pd
+    rows = pd.read_csv(label_path).to_dict("records")
+for r in rows:
+    cid = r.get("chan_id") or r.get("channel")
+    seqs = r.get("anomaly_sequences") or r.get("anomalies")
+    if isinstance(seqs, str):
+        seqs = json.loads(seqs.replace("'", '"'))
+    anoms[cid] = seqs
+print("labelled channels:", len(anoms))

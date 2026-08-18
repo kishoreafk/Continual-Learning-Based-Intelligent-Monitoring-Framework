@@ -1,0 +1,25 @@
+# 5) Build a labelled series for one channel, then window it
+import numpy as np, torch
+
+CHAN = "T-1" if "T-1" in test else list(test.keys())[0]
+print("using channel", CHAN)
+
+tr = np.asarray(train[CHAN], dtype=np.float32)
+te = np.asarray(test[CHAN], dtype=np.float32)
+series = np.concatenate([tr, te], axis=0)
+if series.ndim == 1:
+    series = np.stack([series, np.roll(series, 5), np.roll(series, -5)], axis=1)
+
+labels = np.zeros(series.shape[0], dtype=np.int64)
+offset = len(tr)  # anomaly labels index the test portion
+for (s, e) in anoms.get(CHAN, []):
+    lo, hi = offset + int(s), offset + int(e)
+    labels[max(lo, 0): min(hi, len(labels))] = 1
+
+mu, sd = series[:len(tr)].mean(0, keepdims=True), series[:len(tr)].std(0, keepdims=True) + 1e-6
+series = (series - mu) / sd
+
+WINDOW, STRIDE = 60, 4
+from sage_monitor.datasets import make_windows
+X, Y = make_windows(series, labels, window=WINDOW, stride=STRIDE)
+print("windows:", X.shape, "fault windows:", int(Y.sum()))
