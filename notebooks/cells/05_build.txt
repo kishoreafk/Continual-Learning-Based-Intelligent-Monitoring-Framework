@@ -21,8 +21,22 @@ if tr.ndim != 2 or te.ndim != 2 or tr.shape[1] != te.shape[1]:
 # Fit normalization on training telemetry only; never use test statistics.
 mu = tr.mean(axis=0, keepdims=True)
 sd = tr.std(axis=0, keepdims=True) + 1e-6
-train_series = np.nan_to_num((tr - mu) / sd)
-test_series = np.nan_to_num((te - mu) / sd)
+
+
+def standardize_finite(values, name):
+    scaled = (values - mu) / sd
+    invalid = ~np.isfinite(scaled)
+    count = int(invalid.sum())
+    if count:
+        print(f"{name}: replacing {count} non-finite values with normalized mean")
+    # Explicit values are essential: np.nan_to_num's default +/-inf handling
+    # produces the largest representable float and can create billion-scale
+    # residual z-scores and false fault alerts.
+    return np.nan_to_num(scaled, nan=0.0, posinf=0.0, neginf=0.0)
+
+
+train_series = standardize_finite(tr, "train")
+test_series = standardize_finite(te, "test")
 
 test_labels = np.zeros(len(test_series), dtype=np.int64)
 for start, end in anoms.get(CHAN, []):
