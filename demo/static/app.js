@@ -14,6 +14,7 @@ const state = {
   segments: [],
   injections: [],
   pollTimer: null,
+  formError: null,
 };
 
 const ACTION_COLORS = {
@@ -130,6 +131,26 @@ async function jget(url) {
   if (!r.ok) throw new Error(`${url} -> ${r.status}`);
   return r.json();
 }
+function readNumber(id, label, min, max) {
+  const raw = $(id).value.trim();
+  const value = Number(raw);
+  if (raw === "" || !Number.isFinite(value)) {
+    throw new Error(`${label}: enter a number`);
+  }
+  if (min !== undefined && value < min) throw new Error(`${label}: must be ≥ ${min}`);
+  if (max !== undefined && value > max) throw new Error(`${label}: must be ≤ ${max}`);
+  return value;
+}
+function readInt(id, label, min, max) {
+  const value = readNumber(id, label, min, max);
+  if (!Number.isInteger(value)) throw new Error(`${label}: enter a whole number`);
+  return value;
+}
+function readOptionalInt(id, label, min) {
+  if ($(id).value.trim() === "") return null;
+  return readInt(id, label, min);
+}
+
 async function jpost(url, body) {
   const r = await fetch(url, {
     method: "POST", headers: { "Content-Type": "application/json" },
@@ -168,11 +189,12 @@ function render(snap) {
   $("btn-step").disabled = done || snap.status === "loading" || snap.status === "training";
   $("btn-report").disabled = !snap.records.length;
   $("btn-download").href = `/api/sessions/${state.sessionId}/report/download`;
-  $("train-progress").textContent =
-    snap.status === "training" ? "training base encoder…" :
-    snap.status === "loading" ? "building dataset…" :
-    snap.status === "error" ? `error: ${snap.error}` :
-    `status: ${snap.status}`;
+  $("train-progress").textContent = state.formError ||
+    (snap.status === "training" ? "training base encoder…" :
+     snap.status === "loading" ? "building dataset…" :
+     snap.status === "error" ? `error: ${snap.error}` :
+     `status: ${snap.status}`);
+  $("train-progress").style.color = state.formError ? "#ff5d6c" : "";
 
   // sliding chart window: keep ~450 latest windows on screen
   const VIEW = 450;
@@ -299,12 +321,25 @@ async function loadDatasets() {
 
 /* ---------------- session controls ---------------- */
 async function createSession() {
-  const body = {
-    dataset: state.selectedDataset,
-    window: +$("p-window").value, stride: +$("p-stride").value,
-    epochs: +$("p-epochs").value, seed: +$("p-seed").value,
-    speed: +$("p-speed").value,
-  };
+  state.formError = null;
+  let body;
+  try {
+    body = {
+      dataset: state.selectedDataset,
+      window: readInt("p-window", "window", 20, 240),
+      stride: readInt("p-stride", "stride", 1, 64),
+      epochs: readInt("p-epochs", "epochs", 1, 50),
+      seed: readInt("p-seed", "seed"),
+      channels: readInt("p-channels", "channels", 2, 64),
+      max_windows: readOptionalInt("p-max-windows", "max windows", 50),
+      speed: readNumber("p-speed", "speed", 1, 1000),
+    };
+  } catch (e) {
+    state.formError = `error: ${e.message}`;
+    $("train-progress").textContent = state.formError;
+    $("train-progress").style.color = "#ff5d6c";
+    return;
+  }
   try {
     $("train-progress").textContent = "creating session…";
     const res = await jpost("/api/sessions", body);
@@ -314,7 +349,11 @@ async function createSession() {
     setControls(true);
     $("btn-download").href = `/api/sessions/${state.sessionId}/report/download`;
     startPolling();
-  } catch (e) { $("train-progress").textContent = `error: ${e.message}`; }
+  } catch (e) {
+    state.formError = `error: ${e.message}`;
+    $("train-progress").textContent = state.formError;
+    $("train-progress").style.color = "#ff5d6c";
+  }
 }
 
 function setControls(on) {
@@ -334,9 +373,21 @@ window.addEventListener("resize", () => poll());
 $("btn-create").onclick = createSession;
 $("btn-play").onclick = () => jpost(`/api/sessions/${state.sessionId}/start`).then(startPolling).catch(e => alert(e.message));
 $("btn-pause").onclick = () => jpost(`/api/sessions/${state.sessionId}/pause`).catch(e => alert(e.message));
-$("btn-step").onclick = () => jpost(`/api/sessions/${state.sessionId}/step?n=50`).then(poll).catch(e => alert(e.message));
-$("p-speed").onchange = () => state.sessionId &&
-  jpost(`/api/sessions/${state.sessionId}/speed`, { speed: +$("p-speed").value });
+$("btn-step").onclick = () => {
+  try {
+    const n = readInt("p-step", "step", 1, 500);
+    jpost(`/api/sessions/${state.sessionId}/step?n=${n}`)
+      .then(poll).catch(e => alert(e.message));
+  } catch (e) { alert(e.message); }
+};
+async function applyTypedSpeed() {
+  if (!state.sessionId) return;
+  try {
+    const speed = readNumber("p-speed", "speed", 1, 1000);
+    await jpost(`/api/sessions/${state.sessionId}/speed`, { speed });
+  } catch (e) { alert(e.message); }
+}
+$("p-speed").onchange = applyTypedSpeed;
 $("btn-report").onclick = loadReport;
 $("btn-delete").onclick = async () => {
   await fetch(`/api/sessions/${state.sessionId}`, { method: "DELETE" });
@@ -344,8 +395,13 @@ $("btn-delete").onclick = async () => {
   $("session-badge").textContent = "no session";
   $("stream-progress").textContent = "—"; $("progress-bar").style.width = "0%";
 };
-const inj = (kind) => jpost(`/api/sessions/${state.sessionId}/inject`, { kind, duration: 60 })
-  .then(poll).catch(e => alert(e.message));
+const inj = (kind) => {
+  try {
+    const duration = readInt("p-inj-duration", "duration", 1, 2000);
+    jpost(`/api/sessions/${state.sessionId}/inject`, { kind, duration })
+      .then(poll).catch(e => alert(e.message));
+  } catch (e) { alert(e.message); }
+};
 $("inj-fault").onclick = () => inj("fault");
 $("inj-drift").onclick = () => inj("drift");
 $("inj-ood").onclick = () => inj("ood");

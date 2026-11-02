@@ -57,6 +57,25 @@ class TestMeta:
         assert client.get("/static/app.js").status_code == 200
         assert client.get("/static/style.css").status_code == 200
 
+    def test_dashboard_values_are_typable(self, client):
+        html = client.get("/").text
+        for field in ("p-window", "p-stride", "p-epochs", "p-seed",
+                      "p-channels", "p-max-windows", "p-speed", "p-step",
+                      "p-inj-duration"):
+            assert f'id="{field}"' in html, f"missing input {field}"
+        # no control that only offers a fixed set of values
+        assert '<select id="p-speed"' not in html
+        assert '<select id="p-step"' not in html
+        assert '<select id="p-inj-duration"' not in html
+        # every numeric control is a free-typed number input
+        for field in ("p-speed", "p-step", "p-inj-duration"):
+            assert f'id="{field}" type="number"' in html
+        js = client.get("/static/app.js").text
+        for field in ("p-speed", "p-step", "p-inj-duration"):
+            assert f'"{field}"' in js
+        for helper in ("readNumber", "readInt", "formError"):
+            assert helper in js
+
     def test_openapi_documents_all_paths(self, client):
         paths = client.get("/openapi.json").json()["paths"]
         for p in ("/api/health", "/api/sessions", "/api/sessions/{sid}",
@@ -89,6 +108,27 @@ class TestErrors:
 
 
 class TestSessionLifecycle:
+    def test_typed_custom_params_are_applied(self, client):
+        params = {"dataset": "scripted", "window": 30, "stride": 3,
+                  "epochs": 1, "channels": 8, "seed": 7, "speed": 500}
+        r = client.post("/api/sessions", json=params)
+        assert r.status_code == 200
+        sid = r.json()["session_id"]
+        s = wait_status(client, sid, ("ready", "error"))
+        assert s["status"] == "ready", s.get("error")
+        assert s["params"]["window"] == 30
+        assert s["params"]["stride"] == 3
+        assert s["params"]["epochs"] == 1
+        assert s["params"]["channels"] == 8
+        assert s["params"]["seed"] == 7
+        # windowing follows the typed values: the scripted stream is 3600
+        # raw steps, so window 30 / stride 3 yields 1191 windows.
+        assert s["total_windows"] == 1191
+        chart = client.get(f"/api/sessions/{sid}/chart",
+                           params={"since": 0, "limit": 10}).json()
+        assert len(chart["channels"]) == 8
+        client.delete(f"/api/sessions/{sid}")
+
     def test_full_lifecycle_with_injected_fault(self, client):
         # create + wait for training
         r = client.post("/api/sessions", json={

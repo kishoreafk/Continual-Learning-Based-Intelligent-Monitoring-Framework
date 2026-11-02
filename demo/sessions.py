@@ -35,7 +35,8 @@ class Session:
         self.id = uuid.uuid4().hex[:12]
         self.dataset_id = dataset_id
         self.params = {"window": window, "stride": stride, "epochs": epochs,
-                       "speed": speed, "channels": channels, "seed": seed}
+                       "speed": speed, "channels": channels, "seed": seed,
+                       "max_windows": max_windows}
         self.lock = threading.RLock()
         self.status = "loading"          # loading -> ready -> streaming -> paused -> done
         self.error: Optional[str] = None
@@ -53,7 +54,8 @@ class Session:
         # ---- build the data source -------------------------------------
         if dataset_id == "scripted":
             self.source = DS.load_scripted(steps=4200, channels=channels,
-                                           seg_len=600, seed=seed)
+                                           seg_len=600, seed=seed,
+                                           window=window, stride=stride)
         elif dataset_id.startswith("smap:"):
             ch = dataset_id.split(":", 1)[1]
             self.source = DS.load_smap(ch, window=window, stride=stride,

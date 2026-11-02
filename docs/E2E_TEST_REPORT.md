@@ -30,7 +30,7 @@ backend (`demo/`), and the Mission Control dashboard (`demo/static/`).
 | **Full lifecycle (scripted)** | create → trains to ready → list/detail → step 120 → stream schema → chart payload → **inject FAULT(60)** → start/pause/speed/resume → streams to done (886) → ALERTs on the injected fault → **safety invariants: 0 unsafe adaptations, precision 1.0, point-adjust recall 1.0, FAR 0.0** → events logged → report download attachment → delete → 404 | ✅ PASS |
 | Real data | SMAP P-1 session trains and streams labelled windows | ✅ PASS |
 
-**15/15 passed — combined pytest: 36/36 (74 s).**
+**15/15 passed — combined pytest: 38/38 (67 s).**
 
 ## 3. Live endpoint verification — `scripts/verify_endpoints.py` (34 checks
 against a real uvicorn server on 127.0.0.1:8000)
@@ -86,7 +86,7 @@ One UI bug was found and fixed during this pass (frontend polled
 ## 6. Reproduce
 
 ```bash
-python -m pytest tests/ -q                       # 36 tests
+python -m pytest tests/ -q                       # 38 tests
 python scripts/verify_endpoints.py               # 34 live checks (server running)
 python -m scripts.run_local                      # CLI pipeline + report
 ```

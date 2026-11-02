@@ -33,10 +33,11 @@ STRIDE = 4
 # Scripted scenario
 # ----------------------------------------------------------------------
 def load_scripted(steps: int = 4200, channels: int = 12, seg_len: int = 600,
-                  seed: int = 42) -> Dict:
+                  seed: int = 42, window: int = WINDOW,
+                  stride: int = STRIDE) -> Dict:
     """Build the scripted A -> drift -> B -> C -> FAULT -> B-return -> OOD stream."""
     base = synth_multivariate(steps, channels, seed=seed)
-    X, Y, meta = build_stream(base, window=WINDOW, stride=STRIDE,
+    X, Y, meta = build_stream(base, window=window, stride=stride,
                               seg_len=seg_len, seed=seed)
     first_end = meta.segments[0]["win_end"]
     train_X = X[:first_end][Y[:first_end] == 0]

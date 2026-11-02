@@ -36,13 +36,16 @@ the demo ships with two channels so the presentation works offline.
 ## 3. Recommended demo script (≈ 6 minutes)
 
 1. **Create the session** — panel *1*: keep ★ *Scripted Drift/Fault/OOD
-   Scenario*; panel *2*: defaults (window 60, stride 4, epochs 6, seed 42) →
-   **Create session & train** (~5 s on CPU: trains the frozen TCN+attention
-   encoder on the clean regime only).
-2. **Step into the stream** — click *⏭ +50* twice; the telemetry and safety
-   signals appear. Point out the warm-up: `gate_min_obs = 32` windows of
-   statistics before the gate acts.
-3. **Play** — panel *3*, speed 25 win/s. Watch:
+   Scenario*; panel *2*: defaults (window 60, stride 4, epochs 6, seed 42,
+   channels 12) → **Create session & train** (~5 s on CPU: trains the frozen
+   TCN+attention encoder on the clean regime only). Every value is a normal
+   number field: click it and type any value inside the shown range.
+   *max windows* optionally caps the stream (used by real SMAP data).
+2. **Step into the stream** — click *⏭ Step* twice (the step size is typed in
+   panel *3*, default 50); the telemetry and safety signals appear. Point out
+   the warm-up: `gate_min_obs = 32` windows of statistics before the gate acts.
+3. **Play** — panel *3*, speed 25 win/s (type any speed from 1 to 1000, or
+   pick a preset from the dropdown suggestions). Watch:
    * **gradual drift (~w135–210)** → drift score climbs, then blue **ADAPT**
      ticks: "shift candidate: probing learnability" → the LoRA-style adapter
      absorbs the new regime (verify-before-adapt: a probe must reduce
@@ -55,9 +58,10 @@ the demo ships with two channels so the presentation works offline.
      of relearning.
    * **novel OOD (~w735+)** → OOD = 1.0 but the gate stays NO_ACTION:
      "novel condition: monitoring only" — *unknown ≠ fault*.
-4. **Live injection (the wow moment)** — pause at any point, press
-   **⚡ Inject FAULT** (or DRIFT / OOD), then resume. Within ~15 windows the
-   gate ALERTs on the injected fault and refuses to adapt to it.
+4. **Live injection (the wow moment)** — pause at any point, type the event
+   duration in panel *4* (default 60 windows), press **⚡ Inject FAULT**
+   (or DRIFT / OOD), then resume. Within ~15 windows the gate ALERTs on the
+   injected fault and refuses to adapt to it.
 5. **Report** — press *Compute metrics*: detection, point-adjust,
    false-alarm rate, continual stats and the safety invariant. **⬇ JSON**
    downloads `sage_report_<session>.json` (same schema as
@@ -104,7 +108,7 @@ Everything above also works without a browser:
 ```bash
 python scripts/verify_endpoints.py --base http://127.0.0.1:8000  # endpoint E2E
 python -m scripts.run_local                                      # CLI run + report
-python -m pytest tests/                                          # 36 e2e tests
+python -m pytest tests/                                          # 38 e2e tests
 ```
 
 ## 6. Troubleshooting

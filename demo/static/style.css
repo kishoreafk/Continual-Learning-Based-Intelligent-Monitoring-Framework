@@ -66,6 +66,7 @@ input, select {
   width: 100%;
 }
 label.inline select { width: auto; }
+label.inline input { width: 92px; }
 .btn {
   background: var(--panel2); color: var(--text); border: 1px solid var(--line);
   padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 13px;

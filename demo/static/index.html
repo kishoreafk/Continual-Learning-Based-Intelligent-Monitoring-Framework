@@ -34,10 +34,12 @@
     <section class="panel">
       <h2>2 · Training</h2>
       <div class="grid2">
-        <label>window <input id="p-window" type="number" value="60" min="20" max="240"></label>
-        <label>stride <input id="p-stride" type="number" value="4" min="1" max="64"></label>
-        <label>epochs <input id="p-epochs" type="number" value="6" min="1" max="50"></label>
-        <label>seed <input id="p-seed" type="number" value="42"></label>
+        <label>window <input id="p-window" type="number" value="60" min="20" max="240" step="1" inputmode="numeric"></label>
+        <label>stride <input id="p-stride" type="number" value="4" min="1" max="64" step="1" inputmode="numeric"></label>
+        <label>epochs <input id="p-epochs" type="number" value="6" min="1" max="50" step="1" inputmode="numeric"></label>
+        <label>seed <input id="p-seed" type="number" value="42" step="1" inputmode="numeric"></label>
+        <label title="only used by synthetic datasets">channels <input id="p-channels" type="number" value="12" min="2" max="64" step="1" inputmode="numeric"></label>
+        <label title="only used by real SMAP data">max windows <input id="p-max-windows" type="number" placeholder="all" min="50" step="1" inputmode="numeric"></label>
       </div>
       <button id="btn-create" class="btn primary">Create session &amp; train</button>
       <div id="train-progress" class="muted small">idle</div>
@@ -48,23 +50,29 @@
       <div class="btnrow">
         <button id="btn-play" class="btn" disabled>▶ Play</button>
         <button id="btn-pause" class="btn" disabled>⏸ Pause</button>
-        <button id="btn-step" class="btn" disabled>⏭ +50</button>
+        <button id="btn-step" class="btn" disabled>⏭ Step</button>
       </div>
-      <label class="inline">speed
-        <select id="p-speed">
-          <option value="5">5 win/s</option>
-          <option value="15">15 win/s</option>
-          <option value="25" selected>25 win/s</option>
-          <option value="60">60 win/s</option>
-          <option value="1000">MAX</option>
-        </select>
-      </label>
+      <div class="grid2">
+        <label>speed (win/s) <input id="p-speed" type="number" value="25" min="1" max="1000" step="1" list="speed-presets" inputmode="decimal"></label>
+        <label>step (windows) <input id="p-step" type="number" value="50" min="1" max="500" step="1" inputmode="numeric"></label>
+      </div>
+      <datalist id="speed-presets">
+        <option value="5"></option>
+        <option value="15"></option>
+        <option value="25"></option>
+        <option value="60"></option>
+        <option value="1000">MAX</option>
+      </datalist>
       <div class="progress-wrap"><div id="progress-bar"></div></div>
       <div id="stream-progress" class="muted small">—</div>
     </section>
 
     <section class="panel">
       <h2>4 · Live events <span class="muted small">(scripted only)</span></h2>
+      <label class="inline">duration
+        <input id="p-inj-duration" type="number" value="60" min="1" max="2000" step="1" inputmode="numeric">
+        <span class="muted small">windows</span>
+      </label>
       <div class="btnrow wrap">
         <button id="inj-fault" class="btn danger" disabled>⚡ Inject FAULT</button>
         <button id="inj-drift" class="btn warn" disabled>📈 Inject DRIFT</button>
