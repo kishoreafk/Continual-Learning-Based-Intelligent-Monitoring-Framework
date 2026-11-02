@@ -16,9 +16,9 @@ from pathlib import Path
 import numpy as np
 import torch
 
-# Fixed project layout: this script lives in <project>/scripts and writes
-# only to <project>/artifacts.
-PROJECT_ROOT = Path("E:/Continual Monitoring Framework")
+# Portable project layout: resolve the project root from this file's location
+# so the script works on any machine (Windows/Linux/macOS, any install path).
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS = PROJECT_ROOT / "artifacts"
 REPORT_PATH = ARTIFACTS / "run_report.json"
 MODEL_PATH = ARTIFACTS / "model.pt"

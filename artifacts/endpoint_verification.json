@@ -1,0 +1,177 @@
+{
+  "timestamp": "2026-11-02 17:11:33",
+  "passed": 34,
+  "total": 34,
+  "results": [
+    {
+      "endpoint": "GET /api/health",
+      "ok": true,
+      "detail": "{\"status\": \"ok\", \"device\": \"cpu\", \"cuda_available\": false, \"torch\": \"2.15.0+cpu\", \"active_sessions\":"
+    },
+    {
+      "endpoint": "GET /api/info",
+      "ok": true,
+      "detail": "actions=['NO_ACTION', 'ADAPT', 'RECALL', 'REJECT', 'ALERT']"
+    },
+    {
+      "endpoint": "GET /api/datasets",
+      "ok": true,
+      "detail": "3 datasets: ['scripted', 'smap:P-1', 'smap:T-1']"
+    },
+    {
+      "endpoint": "GET / (dashboard)",
+      "ok": true,
+      "detail": "6318 bytes html"
+    },
+    {
+      "endpoint": "GET /static/app.js",
+      "ok": true,
+      "detail": "15106 bytes"
+    },
+    {
+      "endpoint": "GET /static/style.css",
+      "ok": true,
+      "detail": "6565 bytes"
+    },
+    {
+      "endpoint": "GET /docs (OpenAPI UI)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "endpoint": "GET /openapi.json",
+      "ok": true,
+      "detail": "15 documented paths"
+    },
+    {
+      "endpoint": "GET /api/sessions/{bad} -> 404",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "endpoint": "POST /api/sessions bad dataset -> 400",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "endpoint": "POST step on bad session -> 404",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "endpoint": "POST /api/sessions (create+train)",
+      "ok": true,
+      "detail": "session=767bfb1025e3"
+    },
+    {
+      "endpoint": "session trains to 'ready'",
+      "ok": true,
+      "detail": "status=ready"
+    },
+    {
+      "endpoint": "POST /step?n=120",
+      "ok": true,
+      "detail": "playhead=120"
+    },
+    {
+      "endpoint": "GET /stream records schema",
+      "ok": true,
+      "detail": "50 records"
+    },
+    {
+      "endpoint": "GET /stream segment map",
+      "ok": true,
+      "detail": "8 scripted segments"
+    },
+    {
+      "endpoint": "GET /chart series",
+      "ok": true,
+      "detail": "8 channels x 120 windows"
+    },
+    {
+      "endpoint": "POST /inject fault",
+      "ok": true,
+      "detail": "{'kind': 'fault', 'win_start': 120, 'win_end': 180, 'name': 'injected_fault_120_"
+    },
+    {
+      "endpoint": "POST /start",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "endpoint": "POST /pause",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "endpoint": "POST /speed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "endpoint": "POST /start (resume)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "endpoint": "stream reaches 'done'",
+      "ok": true,
+      "detail": "status=done"
+    },
+    {
+      "endpoint": "gate produced REJECT or ALERT on injected fault",
+      "ok": true,
+      "detail": "actions={'NO_ACTION': 793, 'RECALL': 23, 'ALERT': 54, 'ADAPT': 16}"
+    },
+    {
+      "endpoint": "GET /report schema",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "endpoint": "safety invariant: zero unsafe adaptations",
+      "ok": true,
+      "detail": "adaptations=16, unsafe=0"
+    },
+    {
+      "endpoint": "injected fault detected (point-adjust recall > 0)",
+      "ok": true,
+      "detail": "pa_recall=1.000, precision=1.000"
+    },
+    {
+      "endpoint": "zero false alarms on clean windows",
+      "ok": true,
+      "detail": "far=0.0"
+    },
+    {
+      "endpoint": "GET /events",
+      "ok": true,
+      "detail": "20 events"
+    },
+    {
+      "endpoint": "GET /report/download (attachment)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "endpoint": "DELETE /api/sessions/{sid}",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "endpoint": "deleted session -> 404",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "endpoint": "SMAP P-1 session trains",
+      "ok": true,
+      "detail": "status=ready"
+    },
+    {
+      "endpoint": "SMAP real telemetry streams",
+      "ok": true,
+      "detail": "windows=1200, anomaly_windows=220"
+    }
+  ]
+}

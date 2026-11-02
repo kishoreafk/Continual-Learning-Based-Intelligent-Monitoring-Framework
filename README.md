@@ -34,16 +34,47 @@ Continual Monitoring Framework/
 │   ├── streams.py         # chronological continual-learning stream builder
 │   ├── datasets.py        # SMAP/MSL loading + windowing utilities
 │   └── metrics.py         # detection / temporal / continual / SAFETY metrics
+├── demo/                  # working project demo (REST API + dashboard)
+│   ├── server.py          # FastAPI app: sessions, live streaming, reports
+│   ├── sessions.py        # session manager + streaming threads
+│   ├── data_sources.py    # scripted scenario + real SMAP/MSL loaders
+│   └── static/            # Mission Control dashboard (no build step)
+├── tests/                 # framework + API e2e tests (pytest)
 ├── scripts/
 │   ├── run_local.py       # end-to-end CPU/GPU run on the synthetic stream
-│   └── build_notebook.py  # assembles the Colab notebook from cells + package
+│   ├── build_notebook.py  # assembles the Colab notebook from cells + package
+│   ├── runtime_analysis.py# parameter counts + CPU/GPU benchmarks
+│   ├── verify_endpoints.py# live endpoint verification (34 checks)
+│   └── make_report_figure.py  # decision-stream figure
 ├── notebooks/
 │   ├── cells/             # individual Colab cells (markdown + code)
 │   └── SAGE_Monitor_Colab_Training.ipynb   # GitHub-backed cloud training
-├── artifacts/             # run reports and saved models (generated)
+├── docs/
+│   ├── DEMO_GUIDE.md      # datasets, demo script, expected outputs
+│   ├── RUNTIME_AND_GPU_ANALYSIS.md
+│   ├── E2E_TEST_REPORT.md
+│   └── FACTCHECK.md
+├── artifacts/             # run reports, saved models, screenshots (generated)
 ├── data/                  # downloaded datasets (git-ignored by convention)
 └── requirements.txt
 ```
+
+## Live demo (dashboard + REST API)
+
+```bash
+pip install -r requirements.txt -r demo_requirements.txt
+python -m demo.server          # http://127.0.0.1:8000
+```
+
+One process serves the Mission Control dashboard **and** the REST API that
+wraps `sage_monitor`: session creation & base training, live streaming gate
+decisions, fault/drift/OOD injection, regime memory status, the full safety
+report and JSON report download. Two demo datasets are bundled (the scripted
+drift/fault/recall/OOD scenario and real NASA SMAP P-1/T-1 channels).
+See **docs/DEMO_GUIDE.md** for the presentation walkthrough and
+**docs/E2E_TEST_REPORT.md** for the endpoint/E2E verification evidence.
+The framework runs on CPU (~337 K params, 34.8× real time on 2 cores);
+a GPU is not required — see **docs/RUNTIME_AND_GPU_ANALYSIS.md**.
 
 ## How it works
 

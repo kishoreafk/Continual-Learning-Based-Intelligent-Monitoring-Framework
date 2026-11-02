@@ -796,3 +796,6 @@ class SAGEController:
         self.anomaly_head.load_state_dict(state["anomaly_head"])
         self.anomaly_head._errors = list(state.get("anomaly_errors", []))
         self._sync_teacher()
+        # inference discipline: a freshly loaded model must never run with
+        # active dropout / train-mode normalisation
+        self.encoder.eval()

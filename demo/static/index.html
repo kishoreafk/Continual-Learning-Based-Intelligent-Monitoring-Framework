@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAGE-Monitor · Mission Control</title>
+<link rel="stylesheet" href="/static/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='8' cy='8' r='7' fill='%2300e5a0'/></svg>">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo">SG</div>
+    <div>
+      <h1>SAGE-Monitor <span class="thin">Mission Control</span></h1>
+      <div class="sub">Safety-Gated Continual Monitoring Framework ·
+        <code>Detect → Verify → Gate → Adapt → Recall</code></div>
+    </div>
+  </div>
+  <div class="head-right">
+    <span id="device-badge" class="badge">device: —</span>
+    <span id="session-badge" class="badge dim">no session</span>
+  </div>
+</header>
+
+<main>
+  <!-- ======================= LEFT: CONTROL PANEL ======================= -->
+  <aside>
+    <section class="panel">
+      <h2>1 · Dataset</h2>
+      <div id="dataset-list" class="dataset-list"><div class="muted">loading…</div></div>
+    </section>
+
+    <section class="panel">
+      <h2>2 · Training</h2>
+      <div class="grid2">
+        <label>window <input id="p-window" type="number" value="60" min="20" max="240"></label>
+        <label>stride <input id="p-stride" type="number" value="4" min="1" max="64"></label>
+        <label>epochs <input id="p-epochs" type="number" value="6" min="1" max="50"></label>
+        <label>seed <input id="p-seed" type="number" value="42"></label>
+      </div>
+      <button id="btn-create" class="btn primary">Create session &amp; train</button>
+      <div id="train-progress" class="muted small">idle</div>
+    </section>
+
+    <section class="panel">
+      <h2>3 · Stream</h2>
+      <div class="btnrow">
+        <button id="btn-play" class="btn" disabled>▶ Play</button>
+        <button id="btn-pause" class="btn" disabled>⏸ Pause</button>
+        <button id="btn-step" class="btn" disabled>⏭ +50</button>
+      </div>
+      <label class="inline">speed
+        <select id="p-speed">
+          <option value="5">5 win/s</option>
+          <option value="15">15 win/s</option>
+          <option value="25" selected>25 win/s</option>
+          <option value="60">60 win/s</option>
+          <option value="1000">MAX</option>
+        </select>
+      </label>
+      <div class="progress-wrap"><div id="progress-bar"></div></div>
+      <div id="stream-progress" class="muted small">—</div>
+    </section>
+
+    <section class="panel">
+      <h2>4 · Live events <span class="muted small">(scripted only)</span></h2>
+      <div class="btnrow wrap">
+        <button id="inj-fault" class="btn danger" disabled>⚡ Inject FAULT</button>
+        <button id="inj-drift" class="btn warn" disabled>📈 Inject DRIFT</button>
+        <button id="inj-ood" class="btn info" disabled>🌫 Inject OOD</button>
+        <button id="inj-clean" class="btn" disabled>↺ Restore clean</button>
+      </div>
+      <div id="inj-log" class="muted small">no injections</div>
+    </section>
+
+    <section class="panel">
+      <h2>5 · Report</h2>
+      <div class="btnrow">
+        <button id="btn-report" class="btn" disabled>Compute metrics</button>
+        <a id="btn-download" class="btn" href="#" target="_blank">⬇ JSON</a>
+      </div>
+      <div id="report-box" class="report-box muted small">no report yet</div>
+    </section>
+
+    <section class="panel">
+      <button id="btn-delete" class="btn subtle" disabled>✕ Delete session</button>
+      <div class="footer-note">SAGE-Monitor demo · safety gate:
+        <span class="ok">NO_ACTION</span> <span class="blue">ADAPT</span>
+        <span class="green">RECALL</span> <span class="orange">REJECT</span>
+        <span class="red">ALERT</span></div>
+    </section>
+  </aside>
+
+  <!-- ======================= RIGHT: TELEMETRY ======================= -->
+  <section class="stage">
+    <div class="kpi-row" id="kpi-row">
+      <div class="kpi action"><div class="k">GATE ACTION</div><div class="v" id="kpi-action">—</div><div class="s" id="kpi-reason">waiting</div></div>
+      <div class="kpi"><div class="k">ANOMALY</div><div class="v" id="kpi-anomaly">—</div></div>
+      <div class="kpi"><div class="k">DRIFT</div><div class="v" id="kpi-drift">—</div></div>
+      <div class="kpi"><div class="k">OOD</div><div class="v" id="kpi-ood">—</div></div>
+      <div class="kpi"><div class="k">GATE SCORE</div><div class="v" id="kpi-gate">—</div></div>
+      <div class="kpi"><div class="k">REGIMES</div><div class="v" id="kpi-regimes">—</div></div>
+      <div class="kpi"><div class="k">ADAPT / RECALL</div><div class="v" id="kpi-adapt">—</div></div>
+      <div class="kpi"><div class="k">REJECT / ALERT</div><div class="v" id="kpi-reject">—</div></div>
+      <div class="kpi"><div class="k">UNSAFE ADAPT</div><div class="v" id="kpi-unsafe">—</div></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-head"><span>TELEMETRY — per-window channel means</span><span id="chart-legend" class="legend"></span></div>
+      <canvas id="telemetry" height="190"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-head"><span>SAFETY SIGNALS — anomaly · drift · OOD</span>
+        <span class="legend"><i class="sw" style="background:#ff5d6c"></i>anomaly
+          <i class="sw" style="background:#4da3ff"></i>drift
+          <i class="sw" style="background:#c792ea"></i>ood</span></div>
+      <canvas id="scores" height="160"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-head"><span>GATE DECISIONS TIMELINE</span><span id="timeline-meta" class="muted small"></span></div>
+      <canvas id="timeline" height="66"></canvas>
+    </div>
+
+    <div class="two-col">
+      <div class="chart-card">
+        <div class="chart-head"><span>EVENT LOG</span></div>
+        <div id="event-log" class="event-log"><div class="muted small">no events yet</div></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-head"><span>STREAM SEGMENTS (ground truth)</span></div>
+        <div id="segment-list" class="event-log"><div class="muted small">—</div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

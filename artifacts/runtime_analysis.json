@@ -1,0 +1,55 @@
+{
+  "python": "3.12.16",
+  "torch": "2.15.0+cpu",
+  "cuda_available": false,
+  "cuda_device_count": 0,
+  "device_used": "cpu",
+  "cpu_threads": 2,
+  "platform": "linux",
+  "params_default_25ch": {
+    "encoder_total": 347091,
+    "encoder_base": 208448,
+    "encoder_adaptive": 138643,
+    "anomaly_head": 0,
+    "total": 347091,
+    "total_MB_fp32": 1.324
+  },
+  "params_demo_12ch": {
+    "encoder_total": 336964,
+    "encoder_base": 207616,
+    "encoder_adaptive": 129348,
+    "anomaly_head": 0,
+    "total": 336964,
+    "total_MB_fp32": 1.285
+  },
+  "params_demo_8ch": {
+    "encoder_total": 333848,
+    "encoder_base": 207360,
+    "encoder_adaptive": 126488,
+    "anomaly_head": 0,
+    "total": 333848,
+    "total_MB_fp32": 1.274
+  },
+  "model_checkpoint_KB": 2677.8,
+  "train_base": {
+    "windows": 135,
+    "epochs": 6,
+    "seconds": 4.35,
+    "windows_per_s": 31.0
+  },
+  "stream": {
+    "windows": 886,
+    "seconds": 25.49,
+    "ms_per_window": 28.77,
+    "realtime_factor_x": 34.8
+  },
+  "sanity_metrics": {
+    "precision": 1.0,
+    "recall": 0.8309859154929577,
+    "f1": 0.9076923076923077,
+    "point_adjust_recall": 1.0,
+    "false_alarm_rate": 0.0,
+    "unsafe_adaptation_rate": 0.0,
+    "n_regimes": 2
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "detection": {
+    "precision": 1.0,
+    "recall": 0.6619718309859155,
+    "f1": 0.7966101694915254,
+    "tp": 47,
+    "fp": 0,
+    "fn": 24,
+    "tn": 815
+  },
+  "detection_point_adjust": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "tp": 71,
+    "fp": 0,
+    "fn": 0,
+    "tn": 815
+  },
+  "delays": [
+    12
+  ],
+  "missed": 0,
+  "false_alarm_rate": 0.0,
+  "segment_anomaly_score": {
+    "A_normal": 0.14307167481079144,
+    "gradual_drift": 0.9030189132690429,
+    "B_normal": 0.8079086947441101,
+    "sudden_drift_C": 0.5390391264359157,
+    "C_normal": 0.36713740656773247,
+    "FAULT": 0.7940492458144823,
+    "B_return": 0.7903219525019328,
+    "novel_OOD": 0.9958976904551188
+  },
+  "stats": {
+    "adaptations": 26,
+    "unsafe_adaptations": 0,
+    "recalls": 17,
+    "trial_recalls": 0,
+    "rejects": 0,
+    "alerts": 47,
+    "regimes_created": 2
+  },
+  "unsafe_adaptation_rate": 0.0,
+  "n_regimes": 2
+}
